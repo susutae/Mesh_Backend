@@ -40,6 +40,7 @@ successful API request.
    set -a
    source .env.local
    set +a
+   npm run db:init
    npm run dev:api
    ```
 
