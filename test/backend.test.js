@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
 import app from '../backend.js'
+import { DEFAULT_RESOURCES } from '../db.js'
 
 let baseUrl
 let server
@@ -43,10 +44,26 @@ test('advertises the documented API routes', async () => {
   )
   assert.equal(
     body.endpoints.some(
-      (endpoint) => endpoint.path === '/configadvanced',
+      (endpoint) =>
+        endpoint.method === 'GET' && endpoint.path === '/configadvanced',
     ),
-    false,
+    true,
   )
+})
+
+test('includes every document-derived resource payload', () => {
+  assert.deepEqual(Object.keys(DEFAULT_RESOURCES).sort(), [
+    'config',
+    'configadvanced',
+    'deviceinfo',
+    'spectrum',
+    'status',
+    'statusadvanced',
+  ])
+  assert.equal(Object.keys(DEFAULT_RESOURCES.config).length, 180)
+  assert.equal(Object.keys(DEFAULT_RESOURCES.statusadvanced).length, 80)
+  assert.equal(DEFAULT_RESOURCES.configadvanced.logServerPort, 9999)
+  assert.equal(DEFAULT_RESOURCES.configadvanced.minPwAtten, 6)
 })
 
 test('returns a useful health response when DATABASE_URL is missing', async () => {
@@ -78,10 +95,10 @@ test('returns JSON for unknown endpoints', async () => {
   assert.equal(body.error, 'Endpoint not found')
 })
 
-test('does not expose the removed /configadvanced route', async () => {
+test('exposes the documented /configadvanced route', async () => {
   const response = await fetch(`${baseUrl}/configadvanced`)
   const body = await response.json()
 
-  assert.equal(response.status, 404)
-  assert.equal(body.error, 'Endpoint not found')
+  assert.equal(response.status, 503)
+  assert.match(body.error, /DATABASE_URL/)
 })

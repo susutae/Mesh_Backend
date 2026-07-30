@@ -12,6 +12,11 @@ const endpoints = [
     description: 'Advanced status metrics',
   },
   { method: 'GET', path: '/spectrum', description: 'Spectrum measurements' },
+  {
+    method: 'GET',
+    path: '/configadvanced',
+    description: 'Advanced configuration',
+  },
 ]
 
 function App() {

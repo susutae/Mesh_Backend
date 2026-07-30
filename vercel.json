@@ -17,6 +17,10 @@
       "destination": "/api?__path=config"
     },
     {
+      "source": "/configadvanced",
+      "destination": "/api?__path=configadvanced"
+    },
+    {
       "source": "/deviceinfo",
       "destination": "/api?__path=deviceinfo"
     },

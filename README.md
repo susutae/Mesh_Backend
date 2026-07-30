@@ -13,6 +13,7 @@ database, configured for deployment on Vercel.
 | GET | `/deviceinfo` | Retrieve device information |
 | GET | `/statusadvanced` | Retrieve advanced status information |
 | GET | `/spectrum` | Retrieve spectrum information |
+| GET | `/configadvanced` | Retrieve advanced configuration |
 | GET | `/health` | Check the Neon database connection |
 
 All resource payloads are stored as PostgreSQL `JSONB` records. The table and
@@ -57,7 +58,8 @@ the production rewrites in `vercel.json`.
 
 ## Updating configuration
 
-`POST /config` merges top-level fields by default:
+`POST /config` merges top-level fields by default and returns the resulting
+configuration object:
 
 ```bash
 curl -X POST http://localhost:3001/config \

@@ -15,6 +15,7 @@ const endpointDefinitions = [
   { method: 'GET', path: '/deviceinfo', resource: 'deviceinfo' },
   { method: 'GET', path: '/statusadvanced', resource: 'statusadvanced' },
   { method: 'GET', path: '/spectrum', resource: 'spectrum' },
+  { method: 'GET', path: '/configadvanced', resource: 'configadvanced' },
 ]
 
 app.disable('x-powered-by')
@@ -112,13 +113,7 @@ app.post(routePaths('/config'), async (request, response, next) => {
       : { ...(current?.payload ?? {}), ...request.body }
     const saved = await saveResource('config', payload)
 
-    return response.json({
-      message: replace
-        ? 'Configuration replaced'
-        : 'Configuration updated',
-      config: saved.payload,
-      updatedAt: saved.updated_at,
-    })
+    return response.json(saved.payload)
   } catch (error) {
     return next(error)
   }
