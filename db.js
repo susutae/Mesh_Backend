@@ -519,30 +519,16 @@ export async function initializeDatabase() {
       `
 
       await Promise.all(
-        Object.entries(DEFAULT_RESOURCES).map(([resourceKey, payload]) => {
-          const serializedPayload = JSON.stringify(payload)
-
-          if (resourceKey === 'config') {
-            return sql`
-              INSERT INTO mesh_api_resources (resource_key, payload)
-              VALUES (${resourceKey}, CAST(${serializedPayload} AS JSONB))
-              ON CONFLICT (resource_key)
-              DO UPDATE SET payload =
-                EXCLUDED.payload || mesh_api_resources.payload,
-                updated_at = NOW()
-              WHERE mesh_api_resources.payload IS DISTINCT FROM
-                (EXCLUDED.payload || mesh_api_resources.payload)
-            `
-          }
-
-          return sql`
+        Object.entries(DEFAULT_RESOURCES).map(
+          ([resourceKey, payload]) => sql`
             INSERT INTO mesh_api_resources (resource_key, payload)
-            VALUES (${resourceKey}, CAST(${serializedPayload} AS JSONB))
-            ON CONFLICT (resource_key)
-            DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()
-            WHERE mesh_api_resources.payload IS DISTINCT FROM EXCLUDED.payload
-          `
-        }),
+            VALUES (
+              ${resourceKey},
+              CAST(${JSON.stringify(payload)} AS JSONB)
+            )
+            ON CONFLICT (resource_key) DO NOTHING
+          `,
+        ),
       )
     })().catch((error) => {
       initialization = undefined

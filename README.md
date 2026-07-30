@@ -33,6 +33,7 @@ successful API request.
 
    ```dotenv
    DATABASE_URL=postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require
+   CONFIG_WRITE_TOKEN=generate-a-long-random-secret
    ```
 
 3. Export the variables and start the API:
@@ -59,15 +60,19 @@ the production rewrites in `vercel.json`.
 ## Updating configuration
 
 `POST /config` merges top-level fields by default and returns the resulting
-configuration object:
+configuration object. It is disabled unless `CONFIG_WRITE_TOKEN` is configured,
+and clients must send that token as a bearer credential:
 
 ```bash
 curl -X POST http://localhost:3001/config \
+  -H "Authorization: Bearer $CONFIG_WRITE_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"wifiEnable":false,"meshName":"field-mesh"}'
 ```
 
 To replace the entire configuration, use `POST /config?replace=true`.
+Database initialization only inserts missing resources; it never overwrites
+existing payloads during API reads or serverless cold starts.
 
 ## Deploying to Vercel
 

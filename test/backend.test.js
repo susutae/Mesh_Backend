@@ -9,6 +9,7 @@ let server
 before(async () => {
   delete process.env.DATABASE_URL
   delete process.env.POSTGRES_URL
+  delete process.env.CONFIG_WRITE_TOKEN
 
   server = await new Promise((resolve, reject) => {
     const candidate = app.listen(0, '127.0.0.1')
@@ -85,6 +86,42 @@ test('rejects malformed JSON', async () => {
 
   assert.equal(response.status, 400)
   assert.equal(body.error, 'Malformed JSON request body')
+})
+
+test('disables configuration writes when no write token is configured', async () => {
+  const response = await fetch(`${baseUrl}/config`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: '{}',
+  })
+  const body = await response.json()
+
+  assert.equal(response.status, 503)
+  assert.equal(body.error, 'Configuration updates are disabled.')
+})
+
+test('rejects configuration writes with an invalid token', async () => {
+  process.env.CONFIG_WRITE_TOKEN = 'test-write-token'
+
+  try {
+    const response = await fetch(`${baseUrl}/config`, {
+      method: 'POST',
+      headers: {
+        Authorization: 'Bearer incorrect-token',
+        'Content-Type': 'application/json',
+      },
+      body: '{}',
+    })
+    const body = await response.json()
+
+    assert.equal(response.status, 401)
+    assert.equal(
+      body.error,
+      'A valid configuration write token is required.',
+    )
+  } finally {
+    delete process.env.CONFIG_WRITE_TOKEN
+  }
 })
 
 test('returns JSON for unknown endpoints', async () => {
