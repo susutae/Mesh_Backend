@@ -60,8 +60,9 @@ the production rewrites in `vercel.json`.
 ## Updating configuration
 
 `POST /config` merges top-level fields by default and returns the resulting
-configuration object. It is disabled unless `CONFIG_WRITE_TOKEN` is configured,
-and clients must send that token as a bearer credential:
+configuration object. Browser writes are accepted only from
+`CONFIG_WRITE_ORIGINS` (which defaults to the production mesh UI). Non-browser
+clients must send `CONFIG_WRITE_TOKEN` as a bearer credential:
 
 ```bash
 curl -X POST http://localhost:3001/config \

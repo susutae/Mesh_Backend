@@ -88,7 +88,7 @@ test('rejects malformed JSON', async () => {
   assert.equal(body.error, 'Malformed JSON request body')
 })
 
-test('disables configuration writes when no write token is configured', async () => {
+test('requires a write token when a request has no browser origin', async () => {
   const response = await fetch(`${baseUrl}/config`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -96,8 +96,11 @@ test('disables configuration writes when no write token is configured', async ()
   })
   const body = await response.json()
 
-  assert.equal(response.status, 503)
-  assert.equal(body.error, 'Configuration updates are disabled.')
+  assert.equal(response.status, 401)
+  assert.equal(
+    body.error,
+    'A valid configuration write token is required.',
+  )
 })
 
 test('rejects configuration writes with an invalid token', async () => {
@@ -122,6 +125,42 @@ test('rejects configuration writes with an invalid token', async () => {
   } finally {
     delete process.env.CONFIG_WRITE_TOKEN
   }
+})
+
+test('allows the configured browser origin to reach request validation', async () => {
+  const response = await fetch(`${baseUrl}/config`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Origin: 'https://mesh-user-interface.vercel.app',
+    },
+    body: '[]',
+  })
+  const body = await response.json()
+
+  assert.equal(response.status, 400)
+  assert.equal(
+    body.error,
+    'The request body must be a JSON object with safe property names.',
+  )
+})
+
+test('rejects configuration writes from an untrusted browser origin', async () => {
+  const response = await fetch(`${baseUrl}/config`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Origin: 'https://example.invalid',
+    },
+    body: '{}',
+  })
+  const body = await response.json()
+
+  assert.equal(response.status, 403)
+  assert.equal(
+    body.error,
+    'This origin is not allowed to update configuration.',
+  )
 })
 
 test('returns JSON for unknown endpoints', async () => {

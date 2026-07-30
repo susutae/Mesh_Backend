@@ -8,6 +8,9 @@ import {
 
 const app = express()
 const port = Number(process.env.PORT || 3001)
+const defaultConfigWriteOrigins = [
+  'https://mesh-user-interface.vercel.app',
+]
 
 const endpointDefinitions = [
   { method: 'GET', path: '/status', resource: 'status' },
@@ -70,36 +73,45 @@ function tokensMatch(expected, provided) {
   )
 }
 
+function configWriteOrigins() {
+  return (process.env.CONFIG_WRITE_ORIGINS || defaultConfigWriteOrigins.join(','))
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+}
+
 function authorizeConfigWrite(request, response) {
   const configuredToken = process.env.CONFIG_WRITE_TOKEN
   const authorization = request.get('authorization') || ''
   const providedToken = authorization.startsWith('Bearer ')
     ? authorization.slice('Bearer '.length)
     : ''
+  const origin = request.get('origin') || ''
 
-  if (!configuredToken) {
-    console.warn('[config] write rejected', {
-      ...requestMetadata(request),
-      reason: 'write_token_not_configured',
-    })
-    response.status(503).json({
-      error: 'Configuration updates are disabled.',
-    })
-    return false
+  if (origin && configWriteOrigins().includes(origin)) {
+    return 'trusted_origin'
   }
 
-  if (!providedToken || !tokensMatch(configuredToken, providedToken)) {
-    console.warn('[config] write rejected', {
-      ...requestMetadata(request),
-      reason: 'invalid_write_token',
-    })
-    response.status(401).json({
-      error: 'A valid configuration write token is required.',
-    })
-    return false
+  if (
+    configuredToken &&
+    providedToken &&
+    tokensMatch(configuredToken, providedToken)
+  ) {
+    return 'bearer_token'
   }
 
-  return true
+  const reason = origin ? 'origin_not_allowed' : 'write_token_required'
+  console.warn('[config] write rejected', {
+    ...requestMetadata(request),
+    origin: origin || 'none',
+    reason,
+  })
+  response.status(origin ? 403 : 401).json({
+    error: origin
+      ? 'This origin is not allowed to update configuration.'
+      : 'A valid configuration write token is required.',
+  })
+  return null
 }
 
 function getResourceHandler(resourceKey) {
@@ -153,7 +165,9 @@ for (const { method, path, resource } of endpointDefinitions) {
 
 app.post(routePaths('/config'), async (request, response, next) => {
   try {
-    if (!authorizeConfigWrite(request, response)) {
+    const authorizationMethod = authorizeConfigWrite(request, response)
+
+    if (!authorizationMethod) {
       return
     }
 
@@ -172,6 +186,7 @@ app.post(routePaths('/config'), async (request, response, next) => {
 
     console.info('[config] write accepted', {
       ...requestMetadata(request),
+      authorizationMethod,
       replace,
       updatedFields: Object.keys(request.body).sort(),
     })
