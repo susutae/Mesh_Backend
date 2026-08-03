@@ -53,6 +53,37 @@ function hasUnsafeKeys(value) {
   )
 }
 
+function parseContentKeys(content) {
+  const values = Array.isArray(content) ? content : [content]
+
+  return [
+    ...new Set(
+      values
+        .filter((value) => typeof value === 'string')
+        .flatMap((value) => value.split(','))
+        .map((key) => key.trim())
+        .filter(
+          (key) =>
+            key && !['__proto__', 'constructor', 'prototype'].includes(key),
+        ),
+    ),
+  ]
+}
+
+function selectResourceContent(payload, content) {
+  const keys = parseContentKeys(content)
+
+  if (keys.length === 0) {
+    return payload
+  }
+
+  return Object.fromEntries(
+    keys
+      .filter((key) => Object.prototype.hasOwnProperty.call(payload, key))
+      .map((key) => [key, payload[key]]),
+  )
+}
+
 function requestMetadata(request) {
   return {
     ip:
@@ -115,7 +146,7 @@ function authorizeConfigWrite(request, response) {
 }
 
 function getResourceHandler(resourceKey) {
-  return async (_request, response, next) => {
+  return async (request, response, next) => {
     try {
       const resource = await getResource(resourceKey)
 
@@ -126,7 +157,9 @@ function getResourceHandler(resourceKey) {
         })
       }
 
-      return response.json(resource.payload)
+      return response.json(
+        selectResourceContent(resource.payload, request.query.content),
+      )
     } catch (error) {
       return next(error)
     }
@@ -229,3 +262,5 @@ if (process.env.VERCEL !== '1' && process.env.NODE_ENV !== 'test') {
 
 export { app }
 export default app
+
+export { selectResourceContent }

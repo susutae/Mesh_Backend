@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
-import app from '../backend.js'
+import app, { selectResourceContent } from '../backend.js'
 import { DEFAULT_RESOURCES } from '../db.js'
 
 let baseUrl
@@ -52,7 +52,7 @@ test('advertises the documented API routes', async () => {
   )
 })
 
-test('includes every document-derived resource payload', () => {
+test('includes every live database resource payload', () => {
   assert.deepEqual(Object.keys(DEFAULT_RESOURCES).sort(), [
     'config',
     'configadvanced',
@@ -61,10 +61,40 @@ test('includes every document-derived resource payload', () => {
     'status',
     'statusadvanced',
   ])
-  assert.equal(Object.keys(DEFAULT_RESOURCES.config).length, 180)
-  assert.equal(Object.keys(DEFAULT_RESOURCES.statusadvanced).length, 80)
+  assert.equal(Object.keys(DEFAULT_RESOURCES.config).length, 160)
+  assert.equal(Object.keys(DEFAULT_RESOURCES.statusadvanced).length, 96)
   assert.equal(DEFAULT_RESOURCES.configadvanced.logServerPort, 9999)
-  assert.equal(DEFAULT_RESOURCES.configadvanced.minPwAtten, 6)
+  assert.equal(DEFAULT_RESOURCES.configadvanced.minPwAtten, 5)
+})
+
+test('selects one requested field from a resource payload', () => {
+  assert.deepEqual(
+    selectResourceContent(
+      DEFAULT_RESOURCES.statusadvanced,
+      'phyRxBytes',
+    ),
+    { phyRxBytes: DEFAULT_RESOURCES.statusadvanced.phyRxBytes },
+  )
+})
+
+test('selects comma-separated fields and omits unknown fields', () => {
+  assert.deepEqual(
+    selectResourceContent(
+      DEFAULT_RESOURCES.status,
+      'temp, transmissionDelay,missingField',
+    ),
+    {
+      temp: DEFAULT_RESOURCES.status.temp,
+      transmissionDelay: DEFAULT_RESOURCES.status.transmissionDelay,
+    },
+  )
+})
+
+test('returns the complete payload when content is absent', () => {
+  assert.equal(
+    selectResourceContent(DEFAULT_RESOURCES.status, undefined),
+    DEFAULT_RESOURCES.status,
+  )
 })
 
 test('returns a useful health response when DATABASE_URL is missing', async () => {
