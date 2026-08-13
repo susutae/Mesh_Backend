@@ -23,6 +23,8 @@ export default defineConfig([
       'api/**/*.js',
       'backend.js',
       'db.js',
+      'scripts/**/*.js',
+      'status-endpoints.js',
       'test/**/*.js',
       'vite.config.js',
     ],

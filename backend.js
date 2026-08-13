@@ -5,6 +5,7 @@ import {
   getResource,
   saveResource,
 } from './db.js'
+import { STATUS_ENDPOINTS } from './status-endpoints.js'
 
 const app = express()
 const port = Number(process.env.PORT || 3001)
@@ -14,6 +15,12 @@ const defaultConfigWriteOrigins = [
 
 const endpointDefinitions = [
   { method: 'GET', path: '/status', resource: 'status' },
+  ...STATUS_ENDPOINTS.map(({ path, resourceKey, sourceUrl }) => ({
+    method: 'GET',
+    path,
+    resource: resourceKey,
+    source: sourceUrl,
+  })),
   { method: 'GET', path: '/config', resource: 'config' },
   { method: 'POST', path: '/config', resource: 'config' },
   { method: 'GET', path: '/deviceinfo', resource: 'deviceinfo' },
@@ -170,7 +177,11 @@ app.get(['/', '/api'], (_request, response) => {
   response.json({
     name: 'Mesh Database REST API',
     database: 'Neon PostgreSQL',
-    endpoints: endpointDefinitions.map(({ method, path }) => ({ method, path })),
+    endpoints: endpointDefinitions.map(({ method, path, source }) => ({
+      method,
+      path,
+      ...(source ? { source } : {}),
+    })),
   })
 })
 

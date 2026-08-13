@@ -3,6 +3,16 @@ import './App.css'
 
 const endpoints = [
   { method: 'GET', path: '/status', description: 'Mesh node status' },
+  {
+    method: 'GET',
+    path: '/status/192.168.10.32',
+    description: 'Mesh node 192.168.10.32 status',
+  },
+  {
+    method: 'GET',
+    path: '/status/192.168.10.33',
+    description: 'Mesh node 192.168.10.33 status',
+  },
   { method: 'GET', path: '/config', description: 'Current configuration' },
   { method: 'POST', path: '/config', description: 'Update configuration' },
   { method: 'GET', path: '/deviceinfo', description: 'Device information' },

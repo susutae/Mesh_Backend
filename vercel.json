@@ -13,6 +13,14 @@
       "destination": "/api?__path=status"
     },
     {
+      "source": "/status/192.168.10.32",
+      "destination": "/api?__path=status/192.168.10.32"
+    },
+    {
+      "source": "/status/192.168.10.33",
+      "destination": "/api?__path=status/192.168.10.33"
+    },
+    {
       "source": "/config",
       "destination": "/api?__path=config"
     },

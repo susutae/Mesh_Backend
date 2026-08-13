@@ -40,6 +40,22 @@ test('advertises the documented API routes', async () => {
   assert.ok(
     body.endpoints.some(
       (endpoint) =>
+        endpoint.method === 'GET' &&
+        endpoint.path === '/status/192.168.10.32' &&
+        endpoint.source === 'http://192.168.10.32/status',
+    ),
+  )
+  assert.ok(
+    body.endpoints.some(
+      (endpoint) =>
+        endpoint.method === 'GET' &&
+        endpoint.path === '/status/192.168.10.33' &&
+        endpoint.source === 'http://192.168.10.33/status',
+    ),
+  )
+  assert.ok(
+    body.endpoints.some(
+      (endpoint) =>
         endpoint.method === 'GET' && endpoint.path === '/statusadvanced',
     ),
   )
@@ -207,4 +223,14 @@ test('exposes the documented /configadvanced route', async () => {
 
   assert.equal(response.status, 503)
   assert.match(body.error, /DATABASE_URL/)
+})
+
+test('exposes the two node-specific status routes', async () => {
+  for (const ip of ['192.168.10.32', '192.168.10.33']) {
+    const response = await fetch(`${baseUrl}/status/${ip}`)
+    const body = await response.json()
+
+    assert.equal(response.status, 503)
+    assert.match(body.error, /DATABASE_URL/)
+  }
 })

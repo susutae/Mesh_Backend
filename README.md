@@ -8,6 +8,8 @@ database, configured for deployment on Vercel.
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
 | GET | `/status` | Retrieve mesh status information |
+| GET | `/status/192.168.10.32` | Retrieve the stored status for node `192.168.10.32` |
+| GET | `/status/192.168.10.33` | Retrieve the stored status for node `192.168.10.33` |
 | GET | `/config` | Retrieve configuration |
 | POST | `/config` | Merge a partial configuration update |
 | GET | `/deviceinfo` | Retrieve device information |
@@ -74,6 +76,24 @@ curl -X POST http://localhost:3001/config \
 To replace the entire configuration, use `POST /config?replace=true`.
 Database initialization only inserts missing resources; it never overwrites
 existing payloads during API reads or serverless cold starts.
+
+## Syncing node status to Neon
+
+The two additional node responses are stored independently as
+`status:192.168.10.32` and `status:192.168.10.33` JSONB resources. From a
+machine on the mesh network, fetch both source APIs and upsert their complete
+payloads into Neon with:
+
+```bash
+set -a
+source .env.local
+set +a
+npm run db:sync-status
+```
+
+The sync validates that each response contains the expected IP before writing
+it. Set `STATUS_SYNC_TIMEOUT_MS` to change the default 10-second request
+timeout. Existing stored status remains unchanged if a source cannot be read.
 
 ## Deploying to Vercel
 
